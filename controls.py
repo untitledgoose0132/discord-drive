@@ -34,6 +34,10 @@ def decrypt(nonce: bytes, data: bytes, aad: bytes | None = None) -> bytes:
 
 async def upload(fp: str) -> None:
   meta: list[tuple[bytes, int]] = []
+  name = os.path.basename(fp)
+  with shelve.open("files") as s:
+    if name in s:
+      input("Found a file of the same name already uploaded, press Enter to proceed (will overwrite previous file!!!)")
   with open(fp, "rb") as f:
     i = 1
     s = os.path.getsize(fp)
@@ -51,14 +55,15 @@ async def upload(fp: str) -> None:
         break
       i += 1
   with shelve.open("files") as s:
-    s.update({os.path.basename(fp): meta})
+    s.update({name: meta})
 
 
 async def download(fp: str) -> None:
   fp = os.path.basename(fp)
-  with shelve.open("files") as s:
-    meta: list[tuple[bytes, int]] = s[fp]
-  if not meta:
+  try:
+    with shelve.open("files") as s:
+      meta: list[tuple[bytes, int]] = s[fp]
+  except KeyError:
     print("File not found")
     return
   with open(fp, "wb") as f:
@@ -76,10 +81,11 @@ async def download(fp: str) -> None:
 
 async def delete(fp: str) -> None:
   fp = os.path.basename(fp)
-  with shelve.open("files") as s:
-    meta: list[tuple[bytes, int]] = s[fp].copy()
-    del s[fp]
-  if not meta:
+  try:
+    with shelve.open("files") as s:
+      meta: list[tuple[bytes, int]] = s[fp].copy()
+      del s[fp]
+  except KeyError:
     print("File not found")
     return
   reader, writer = await open_connection("127.0.0.1", config.PORT_CMD)
@@ -87,7 +93,7 @@ async def delete(fp: str) -> None:
     print(f"Deleting chunk #{i}/{len(meta)} ({m_id})", end="\r")
     writer.write(f"delete {m_id}\n".encode())
     await writer.drain()
-    re = await reader.read()
+    re = await reader.readline()
     if re.strip() != b"Success":
       raise eval(re.decode())
     print(f"Deleted chunk #{i}/{len(meta)} ({m_id}) ")

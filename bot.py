@@ -67,10 +67,11 @@ class Bot(Client):
           assert self.channel
           try:
             await (await self.channel.fetch_message(int(args))).delete()
-            writer.write(b"Success")
+            writer.write(b"Success\n")
           except HTTPException as e:
-            writer.write(repr(e).encode())
-          await writer.drain()
+            writer.write(repr(e).encode() + b"\n")
+          finally:
+            await writer.drain()
     finally:
       writer.close()
       try:
