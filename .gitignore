@@ -1,0 +1,6 @@
+__pycache__
+encryptkey
+files
+.flake8
+pyproject.toml
+.venv
