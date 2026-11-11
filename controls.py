@@ -90,13 +90,13 @@ async def delete(fp: str) -> None:
     return
   reader, writer = await open_connection("127.0.0.1", config.PORT_CMD)
   for i, (_, m_id) in enumerate(meta):
-    print(f"Deleting chunk #{i}/{len(meta)} ({m_id})", end="\r")
+    print(f"Deleting chunk #{i + 1}/{len(meta)} ({m_id})", end="\r")
     writer.write(f"delete {m_id}\n".encode())
     await writer.drain()
     re = await reader.readline()
     if re.strip() != b"Success":
       raise eval(re.decode())
-    print(f"Deleted chunk #{i}/{len(meta)} ({m_id}) ")
+    print(f"Deleted chunk #{i + 1}/{len(meta)} ({m_id}) ")
 
 
 def list_files() -> None:
